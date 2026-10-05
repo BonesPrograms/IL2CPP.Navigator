@@ -1,0 +1,391 @@
+#if XQUINN_ENABLE_LEGACY_MANAGED_REFLECTION
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using System.Reflection;
+using XQuinn.Reflection;
+using System.IO;
+using XQuinn.IO;
+
+
+namespace XQuinn.ObjectModel
+{
+
+
+    public sealed class InstanceReader : IOStream
+    {
+        void Write(string txt) => Writer.WriteLine(txt); //rewrote the code to use a streamwriter and im lazy, method was already called "Write"
+        public Type? LoopLimit;
+        const BindingFlags Flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Static;
+        //loops through all base types so its declared only, but "source type" is tracked (the inheritor at the very end) if its a Field
+
+        InstanceReader()
+        {
+
+        }
+        public static InstanceReader New(string outputFilePath, bool makeFileIfNotFound, Type? loopLimit = null)
+        {
+            InstanceReader reader = New<InstanceReader>(new(), outputFilePath, makeFileIfNotFound);
+            reader.LoopLimit = loopLimit;
+            return reader;
+        }
+
+        public void Read(object instance, int skip = 0)
+        {
+            Skip(skip);
+            Type instanceType = instance.GetType();
+            string msg = $"Beginning read of fields in {instanceType}";
+            LoopLimit ??= LoopLimiter(instanceType);
+            Write(msg);
+            Skip(2);
+            ReadClass(instance, false, true);
+            Flush();
+        }
+        public static void Read(string outputFilePath, bool makeFileIfNotFound, object instance, Type? loopLimit = null)
+        {
+            using InstanceReader reader = New(outputFilePath, makeFileIfNotFound, loopLimit);
+            reader.Read(instance);
+        }
+        //For overriding in inheritors incase you want to give a specific type a custom read (for example, a qud gameobject, since a normal read would be uninformative)
+        void ReadClass(object classObj, bool cameFromCollection = false, bool cameFromReferenceType = false)
+        {
+            // if (!ReadClassCustom(classObj, cameFromCollection, cameFromReferenceType))
+            //        return;
+            Type objectType = classObj.GetType();
+            Write($"Beginning read for fields of type {objectType}.");
+            Skip(1);
+            LoopInheritance(classObj, objectType, cameFromCollection, cameFromReferenceType);
+        }
+
+        static Type LoopLimiter(Type t)
+        {
+            if (t.IsEnum)
+                return typeof(Enum);
+            if (t.IsValueType)
+                return typeof(ValueType);
+            return typeof(object);
+        }
+
+        // /// <summary>
+        // /// Return false to skip original readclass.
+        // /// </summary>
+        // /// <param name="obj"></param>
+        // /// <returns></returns>
+        // protected virtual bool ReadClassCustom(object obj, bool cameFromCollection, bool cameFromReferenceType)
+        // {
+        //     return true;
+        // }
+
+        void LoopInheritance(object classObj, Type sourceType, bool cameFromCollection, bool cameFromReferenceType)
+        {
+            Type? varyingType = sourceType;
+            while (varyingType != null && varyingType != LoopLimit)
+            {
+                FieldInfo[] fields = varyingType!.GetFields(Flags);
+                List<FieldObject> sortedFields = SortFields(classObj, fields, sourceType);
+                foreach (FieldObject field in sortedFields)
+                    ReadObject(field, field.FieldInfo, field.SourceType, cameFromCollection, cameFromReferenceType);
+                varyingType = varyingType.BaseType;
+            }
+        }
+
+
+        //cameFromCollection is a little ambiguous here : it does not mean this object is an element in a collection
+        //that is what isInCollection means (because we are receiving an <Element> object rather than a <Field> object)
+        //cameFromCollection means we are reading a field in a custom type that is an element in a collection
+        void ReadObject(TokenizedObject info, FieldInfo? field, Type? sourceType, bool cameFromCollection, bool cameFromReferenceType)
+        {
+            Skip(1);
+            object? obj = info.Instance;
+            ObjectToken token = info.Token;
+            bool isInCollection = info is ElementObject; //field and sourcetype will be null
+            ReadObjectBasic(info, field, sourceType, isInCollection);
+            switch (token)
+            {
+                case ObjectToken.IDictionary:
+                    {
+                        if (cameFromReferenceType)
+                            goto case ObjectToken.ClassOrStruct;
+                        if (!isInCollection && !cameFromCollection)
+                            ReadIDictionary((IDictionary)obj!);
+                        else
+                            Write("Detected a collection as an element in a collection or a field for a custom type in a collection, skipping for readability.");
+                    }
+                    break;
+                case ObjectToken.ICollection or ObjectToken.IList:
+                    {
+                        if (cameFromReferenceType)
+                            goto case ObjectToken.ClassOrStruct;
+                        if (!isInCollection && !cameFromCollection)     //reading collections inside of collections is not easy to understand so it is not allowed
+                            ReadIList((ICollection)obj!);
+                        else
+                            Write("Detected a collection as an element in a collection or a field for a custom type in a collection, skipping for readability.");
+                    }
+                    break;
+                case ObjectToken.ClassOrStruct:
+                    {
+                        if (cameFromReferenceType) //member access chains that are larger than one are really hard to keep track of in your brain when reading the log, so they are skipped
+                            Write("Detected custom type as a field in a custom type. Skipping for readability."); //they also clog the console
+                        else if (!cameFromCollection)
+                        {
+                            Write($"{(isInCollection ? "element" : $"\"{field!.Name}\"")} is a custom type, reading fields.");
+                            ReadClass(obj!, isInCollection, true);
+                        }
+                        else if (!isInCollection)
+                            Write($"{$"\"{field!.Name}\""} is a custom type, but is a field for a custom type that is an element in a collection. Skipping for readability.");
+                        else
+                            Write("Detected custom type element in a multi-collection chain. Skipping for readability.");
+                    }       //parts like Brain will make the console EXPLODE if we read these, some of their collections have deep member access chains, such as PartyMembers
+                    break;  //you cant really read those collections properly with this Type at all
+            }
+
+        }
+        static string? GenericTypeToString(Type? type)
+        {
+            StringBuilder sb = new();
+            if (type == null) return null;
+            MetadataPrinter.FixGenericString(sb, type.Name);
+            MetadataPrinter.AddGenericArguments(sb, type.GetGenericArguments(), true);
+            return sb.ToString();
+        }
+        void ReadObjectBasic(TokenizedObject info, FieldInfo? field, Type? sourceType, bool isInCollection)
+        {
+            StringBuilder text = new(); //sourceType and field will be null if in collection
+            text.Append($"Reading {(isInCollection ? "ELEMENT" : $"FIELD \"{field!.Name}\"")} from {(isInCollection ? "collection" : $"type {GenericTypeToString(sourceType)}")}:{Environment.NewLine}");
+            text.Append($"Type: {(isInCollection ? info.IsNull ? "null value in keyValuePair, cannot get type info" : GenericTypeToString(info.Instance!.GetType()) : GenericTypeToString(field!.FieldType))}{Environment.NewLine}");
+            text.Append(DisplayValue(info)); //I have prevented lists from sending null elements, and IDictionary from sending null keys, but keys with null values are permitted
+            if (!isInCollection)                //so in those cases it is possible for us to be unable to retrieve the value's type
+            {                                   //though you can just see the dictionary's generic arguments to get an idea of what type it would've been
+                text.Append($"Declared in: ");
+                MetadataPrinter.GenericTypeToString(text, field!.DeclaringType, true);
+                text.Append(Environment.NewLine);
+                text.Append($"Attributes {field.Attributes}{Environment.NewLine}");
+            }
+            Write(text.ToString());
+
+        }
+
+        void ReadIList(ICollection list)
+        {
+            Skip(1);
+            Write("READING ILIST OF COUNT " + list.Count.ToString());
+            List<ElementObject> sortedElements = SortElements(list);
+            foreach (var element in sortedElements)
+            {
+                ReadObject(element, null, null, false, false);
+            }
+            Skip(1);
+            Write("ILIST FINISHED");
+            Skip(1);
+        }
+
+        void ReadIDictionary(IDictionary dic)
+        {
+            Skip(1);
+            Write("READING IDICTIONARY OF COUNT " + dic.Count.ToString());
+            IDictionaryEnumerator enumerator = dic.GetEnumerator();
+            Dictionary<ElementObject, ElementObject> elementDictionary = new();
+            while (enumerator.MoveNext())
+            {
+                if (enumerator.Key != null)
+                {
+                    ObjectToken keytoken = TokenizedObject.GetToken(enumerator.Key);
+                    ObjectToken valuetoken = TokenizedObject.GetToken(enumerator.Value);
+                    elementDictionary[new ElementObject(keytoken, enumerator.Key)] = new ElementObject(valuetoken, enumerator.Value);
+                }
+            }
+            int count = 1;
+            foreach (var pair in elementDictionary)
+            {
+                Skip(1);
+                Write($"KEY: {count}");
+                ReadObject(pair.Key, null, null, false, false);
+                Skip(1);
+                Write($"VALUE: {count}");
+                ReadObject(pair.Value, null, null, false, false);
+                count++;
+            }
+            Skip(1);
+            Write("IDICTIONARY FINISHED");
+            Skip(1);
+
+        }
+
+
+        static List<FieldObject> SortFields(object classObj, FieldInfo[] fields, Type sourceType)
+        {
+            List<FieldObject> fieldDetails = new(fields.Length);
+            for (int i = 0; i < fields.Length; i++)
+            {
+                FieldInfo field = fields[i];
+                object? fieldObj = field.GetValue(classObj);
+                ObjectToken token = TokenizedObject.GetToken(fieldObj);
+                fieldDetails.Add(new FieldObject(token, field, fieldObj!, sourceType));
+            }
+            return SortByToken(fieldDetails);
+        }
+
+        static List<ElementObject> SortElements(ICollection list) //on the off chance you have a List<object>
+        {                                       //you cant control dictionary order and ObjectInfo doesn't support making a "KeyValue" class for a theoretical List<KeyValue> (i tried it, its a mess)
+            List<ElementObject> elements = new();     //so we dont sort dictionaries by order
+            foreach (var element in list)
+            {
+                //  if (element != null)
+                //  {
+                ObjectToken token = TokenizedObject.GetToken(element);
+                elements.Add(new ElementObject(token, element));
+                //  }
+            }
+            return SortByToken(elements);
+        }
+
+        static List<T> SortByToken<T>(List<T> infoObjects) where T : TokenizedObject
+        {
+            List<T> referenceTypes = new();
+            List<T> simpleTypes = new();
+            List<T> collections = new();
+            foreach (var info in infoObjects)
+            {
+                if (info.IsCollection)
+                    collections.Add(info);
+                else if (info.IsSimple || info.IsNull)
+                    simpleTypes.Add(info);
+                else if (info.IsReferenceType)
+                    referenceTypes.Add(info);
+            }
+            List<T> sortedInfo = new(infoObjects.Count);
+            sortedInfo.AddRange(simpleTypes);
+            sortedInfo.AddRange(collections);
+            sortedInfo.AddRange(referenceTypes);
+            return sortedInfo; //rearranges order
+        }
+
+
+        static string DisplayValue(TokenizedObject info)
+        {
+            string msg = $"Value: {$"{info.Instance}" ?? "null"}{Environment.NewLine}";
+            if (info.IsSimple && !info.IsNull)
+            {
+
+                string valueDisplay = SimpleValueDisplay(info.Instance, info.Token);
+                msg = $"Value: {valueDisplay}{Environment.NewLine}";
+            }
+            return msg;
+
+        }
+
+        // static string CheckRef(object? obj, Token token) => token switch
+        // {
+        //     Token.IDictionary or Token.IList => ReferenceTypeValueDisplay(obj),
+        //     _=> $"{obj}" //custom type tostring overload is taken, though usually this value is meaningless
+        // };
+
+        static string SimpleValueDisplay(object? obj, ObjectToken token) =>
+        token switch
+        {
+            ObjectToken.Boolean => ShowBoolValue((bool)obj!),
+            ObjectToken.String or ObjectToken.Enum => $"\"{obj}\"", //gives strings an enums an orange stringy color
+            _ => $"{obj}", //integers always look blue and custom structs have the option of string overloads
+        };
+
+        static string ShowBoolValue(bool boolean)
+        {
+            return boolean ? "true" : "false";
+        }
+
+        void Skip(int value)
+        {
+            for (int i = 1; i < value; i++)
+                Write(Environment.NewLine);
+        }
+
+
+        abstract class TokenizedObject
+        {
+            public readonly ObjectToken Token;
+
+            public readonly object? Instance;
+
+            internal TokenizedObject(ObjectToken token, object? Object)
+            {
+                this.Token = token;
+                this.Instance = Object;
+            }
+
+            public bool IsNull => Token == ObjectToken.Null;
+
+            public bool IsReferenceType => Token == ObjectToken.ClassOrStruct;
+
+            public bool IsCollection => Token == ObjectToken.IList || Token == ObjectToken.IDictionary || Token == ObjectToken.ICollection;
+
+            public bool IsSimple => Token switch
+            {
+                ObjectToken.PrimitiveStruct or ObjectToken.String or ObjectToken.Enum or ObjectToken.Delegate or ObjectToken.Boolean => true,
+                _ => false
+            };
+
+            public static ObjectToken GetToken(object? obj)
+             =>
+                obj switch
+                {
+                    null => ObjectToken.Null,
+                    string => ObjectToken.String,
+                    bool => ObjectToken.Boolean,
+                    Enum => ObjectToken.Enum,
+                    ValueType => EvaluateValueType((ValueType)obj),
+                    IDictionary => ObjectToken.IDictionary,
+                    IList => ObjectToken.IList,
+                    Delegate => ObjectToken.Delegate, //this may require extra work, dont know how to read the delegate value yet
+                    ICollection => ObjectToken.ICollection,
+                    _ => ObjectToken.ClassOrStruct
+                };
+            static ObjectToken EvaluateValueType(ValueType valuetype) => valuetype.GetType().IsPrimitive ? ObjectToken.PrimitiveStruct : ObjectToken.ClassOrStruct;
+
+        }
+
+
+
+        sealed class ElementObject : TokenizedObject
+        {
+            internal ElementObject(ObjectToken token, object? Object) : base(token, Object)
+            {
+            }
+        }
+
+        sealed class FieldObject : TokenizedObject
+        {
+            public readonly FieldInfo FieldInfo;
+
+            public readonly Type SourceType; //the type of the instance that the field's value "exists" in (debatable term if the field is private and was declared in a base class)
+                                             //that being said SourceType obviously may be different from the field's actual declaring type 
+            internal FieldObject(ObjectToken token, FieldInfo field, object Object, Type sourceType) : base(token, Object)
+            {
+                FieldInfo = field;
+                SourceType = sourceType;
+            }
+        }
+
+        enum ObjectToken  //tokens are used to figure out what means we will use to read the value
+        {
+            _invalid, //unused default value
+            Null,
+            IList, //IList and ICollection can probably be grouped together but we need to check if its an IDictionary first then
+            IDictionary, //need to add ICollection support for hashish tables
+            ICollection,
+            PrimitiveStruct,
+            String, //strings are classes read like primitive structs
+            ClassOrStruct, //Classes and nonprimitive structs (called "Custom Types" by the reader)
+            Enum,
+            Delegate,
+            Boolean //booltostring is converted to its lower varian
+        }
+
+
+
+
+    }
+
+
+}
+#endif

@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>IL2CPP.Navigator</AssemblyName>
+    <Product>IL2CPP Navigator</Product>
+    <Version>1.1.0</Version>
+    <RootNamespace>XQuinn.BepInEx</RootNamespace>
+    <BepInExPluginGuid>xquinn.navigator</BepInExPluginGuid>
+    <BepInExPluginName>IL2CPP Navigator</BepInExPluginName>
+    <BepInExPluginVersion>$(Version)</BepInExPluginVersion>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json;
+      https://nuget.samboy.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+
+    <VietnamWarDirectory Condition="'$(VietnamWarDirectory)' == ''">C:\Program Files (x86)\Steam\steamapps\common\VietnamWar</VietnamWarDirectory>
+    <BepInExDirectory>$(VietnamWarDirectory)\BepInEx</BepInExDirectory>
+    <Il2CppReferencesPath>$(BepInExDirectory)\interop</Il2CppReferencesPath>
+    <BepInExCorePath>$(BepInExDirectory)\core</BepInExCorePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Extensions.cs" />
+    <Compile Include="For.cs" />
+    <Compile Include="Plugin.cs" />
+    <Compile Include="IO\BaseIOStream.cs" />
+    <Compile Include="IO\Log.cs" />
+    <Compile Include="LangInterp\**\*.cs" />
+    <Compile Include="Reflection\**\*.cs" />
+    <Compile Include="Runtime\**\*.cs" />
+    <Compile Include="Parsing\EnumNet20.cs" />
+    <Compile Include="Parsing\NativeIntNet20.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.*" IncludeAssets="compile" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExCorePath)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(Il2CppReferencesPath)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>$(Il2CppReferencesPath)\Il2Cppmscorlib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Il2CppInterop.Runtime">
+      <HintPath>$(BepInExCorePath)\Il2CppInterop.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(Il2CppReferencesPath)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateVietnamWarReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(BepInExCorePath)\BepInEx.Unity.IL2CPP.dll')" Text="Vietnam War BepInEx was not found at '$(BepInExDirectory)'. Set -p:VietnamWarDirectory=&quot;C:\path\to\VietnamWar&quot;." />
+    <Error Condition="!Exists('$(Il2CppReferencesPath)\Il2Cppmscorlib.dll')" Text="Vietnam War IL2CPP interop assemblies were not found at '$(Il2CppReferencesPath)'. Run the game through BepInEx once or set VietnamWarDirectory correctly." />
+    <Error Condition="!Exists('$(Il2CppReferencesPath)\Assembly-CSharp.dll')" Text="Vietnam War Assembly-CSharp proxy was not found at '$(Il2CppReferencesPath)'." />
+  </Target>
+</Project>
