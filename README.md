@@ -21,3 +21,7 @@ Normal chat input is routed to one persistent Navigator feed. Leading `!` strips
 Start with `Types.String("a!b")` and look for `Returned:` followed by `a!b`. Examples and instruction syntax are in `docs\NAVIGATOR_GUIDE.md`. Architecture, known limits, and verified behavior are in `docs\IMPLEMENTATION_AND_VERIFICATION.md`.
 
 **Do not load this DLL together with `IL2CPP.Navigator.Verifier.dll`**: they inject the same types and patch the same chatbot methods. The verifier has its own README and local copy of the runtime source it tests.
+
+## Injected classes
+
+The independent verifier at `C:\Users\user\Desktop\C#Lab\IL2CPP.Navigator.Verifier` ran 40 in-game cases on October 7, 2026 with zero failures. Its `InjectedProbe.cs` is a **test fixture**, not a production Navigator type. The verifier confirmed Navigator can construct an injected class, call exposed instance methods, assign/read native field wrappers (including an IL2CPP `List<int>`), and pass a `Types.Array<int>` result to an explicit `Il2CppSystem.Array` parameter. `List<int>(IEnumerable<int>)` also accepted an array created by `Types.Array<int>`. A managed `params int[]` method on the injected fixture was **not** exposed to IL2CPP reflection. See `docs\NAVIGATOR_GUIDE.md` for the registration and usage pattern. These observations are specific to the installed game/runtime.

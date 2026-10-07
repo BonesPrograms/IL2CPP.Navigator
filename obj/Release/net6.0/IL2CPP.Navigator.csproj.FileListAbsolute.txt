@@ -11,3 +11,4 @@ C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Release\net6.0
 C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Release\net6.0\refint\IL2CPP.Navigator.dll
 C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Release\net6.0\IL2CPP.Navigator.pdb
 C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Release\net6.0\ref\IL2CPP.Navigator.dll
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Release\net6.0\IL2CPP.Navigator.sourcelink.json

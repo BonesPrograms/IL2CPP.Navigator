@@ -1,0 +1,14 @@
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\bin\Debug\net6.0\IL2CPP.Navigator.deps.json
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\bin\Debug\net6.0\IL2CPP.Navigator.dll
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\bin\Debug\net6.0\IL2CPP.Navigator.pdb
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.csproj.AssemblyReference.cache
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\MyPluginInfo.cs
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.AssemblyInfoInputs.cache
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.AssemblyInfo.cs
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.csproj.CoreCompileInputs.cache
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.sourcelink.json
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.dll
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\refint\IL2CPP.Navigator.dll
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\IL2CPP.Navigator.pdb
+C:\Users\user\Desktop\C#Lab\VietnamWarModLab\IL2CPP.Navigator\obj\Debug\net6.0\ref\IL2CPP.Navigator.dll

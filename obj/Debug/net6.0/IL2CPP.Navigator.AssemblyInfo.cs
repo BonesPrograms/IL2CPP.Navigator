@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IL2CPP.Navigator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.1.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.1.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.1.0+8f1ad96b244485d33c12c0cb238cd394eb2571ba")]
 [assembly: System.Reflection.AssemblyProductAttribute("IL2CPP Navigator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IL2CPP.Navigator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.1.0.0")]

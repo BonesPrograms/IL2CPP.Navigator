@@ -23,6 +23,10 @@ The independent verifier's last in-game run for this code revision reported **37
 
 The 37/37 run tested the **verifier plugin embedding this runtime** in this specific game/runtime. The public production DLL was built and deployed and matched the recovered project by hash; it was not itself a separate 37-case test harness. The verifier's project now owns a snapshot of the shared source in its `NavigatorSource` directory. If either project is edited, rebuild and retest the relevant DLL; the snapshot will not automatically sync.
 
+### Later standalone verifier run: injected classes and arrays (October 7, 2026)
+
+The verifier, now located at `C:\Users\user\Desktop\C#Lab\IL2CPP.Navigator.Verifier`, added three cases and passed **40/40** with only its own DLL loaded. The new cases proved (1) `Types.Array<int>` can supply the `IEnumerable<int>` argument to `List<int>`'s corresponding constructor; (2) a verifier-owned class injected via ClassInjector exposes native `Il2CppValueField<int>`, `Il2CppStringField`, and `Il2CppReferenceField<Il2CppSystem.Collections.Generic.List<int>>` fields but not an ordinary managed `int` field, and does not expose its managed `SumParams(params int[])` method; and (3) Navigator can construct that class, invoke an ordinary method and an explicit `Il2CppSystem.Array` method, read/write all three native fields, and retain the instance through a saved variable. The injector did not error merely because the ineligible managed `params` method existed. This is evidence for the tested method signature and runtime, **not** a blanket assertion about other `params` signatures. The test fixture is not shipped in the production DLL; shared runtime source matched the main project before the build apart from the main project's pre-existing deletion of `Runtime\Preload.cs`.
+
 ## Build and safety limits
 
 - Target framework: .NET 6; compile against the target game's BepInEx IL2CPP and generated interop references. `dotnet build IL2CPP.Navigator.csproj -c Release` is a build only, not a deployment.
