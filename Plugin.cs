@@ -1,6 +1,7 @@
 using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
+using XQuinn.CPPRuntime;
 
 namespace XQuinn.BepInEx
 {
