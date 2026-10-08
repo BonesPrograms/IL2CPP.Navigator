@@ -2,8 +2,8 @@ using System;
 using System.Text;
 using Il2CppInterop.Runtime;
 using XQuinn.Extensions;
-using XQuinn.Parsing;
-using XQuinn.Runtime.NavigatorEngine;
+using XQuinn.CPPParsing;
+using XQuinn.CPPRuntime.NavigatorEngine;
 using Type = Il2CppSystem.Type;
 
 namespace XQuinn.LangInterp.SyntaxTree

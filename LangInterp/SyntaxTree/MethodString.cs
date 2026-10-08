@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using XQuinn.Extensions;
-using XQuinn.Runtime.NavigatorEngine;
+using XQuinn.CPPRuntime.NavigatorEngine;
 using MethodInfo = Il2CppSystem.Reflection.MethodInfo;
 
 namespace XQuinn.LangInterp.SyntaxTree

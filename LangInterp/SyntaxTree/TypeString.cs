@@ -1,5 +1,5 @@
-using XQuinn.Reflection;
-using XQuinn.Runtime.NavigatorEngine;
+using XQuinn.CPPReflection;
+using XQuinn.CPPRuntime.NavigatorEngine;
 using Type = Il2CppSystem.Type;
 
 namespace XQuinn.LangInterp.SyntaxTree

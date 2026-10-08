@@ -11,7 +11,6 @@
     <LangVersion>10</LangVersion>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <RestoreAdditionalProjectSources>
       https://api.nuget.org/v3/index.json;
@@ -24,19 +23,6 @@
     <Il2CppReferencesPath>$(BepInExDirectory)\interop</Il2CppReferencesPath>
     <BepInExCorePath>$(BepInExDirectory)\core</BepInExCorePath>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="Extensions.cs" />
-    <Compile Include="For.cs" />
-    <Compile Include="Plugin.cs" />
-    <Compile Include="IO\BaseIOStream.cs" />
-    <Compile Include="IO\Log.cs" />
-    <Compile Include="LangInterp\**\*.cs" />
-    <Compile Include="Reflection\**\*.cs" />
-    <Compile Include="Runtime\**\*.cs" />
-    <Compile Include="Parsing\EnumNet20.cs" />
-    <Compile Include="Parsing\NativeIntNet20.cs" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.*" IncludeAssets="compile" />
