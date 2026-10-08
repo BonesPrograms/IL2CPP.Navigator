@@ -90,8 +90,9 @@ namespace XQuinn.CPPRuntime
             int index = chat.IndexOf('!');
             if (index >= 0)
             {
-                if (index + 1 < chat.Length)
-                    chat = chat.Substring(index + 1);
+                index = index + 1;
+                if (index < chat.Length)
+                    chat = chat.Substring(index);
                 return true;
             }
             string output = s_feed.SafeInterface(chat);
