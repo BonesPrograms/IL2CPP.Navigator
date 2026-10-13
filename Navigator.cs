@@ -12,12 +12,18 @@ using XQuinn.Extensions;
 namespace XQuinn.CPPRuntime
 {
 
+    [HarmonyPatch(typeof(StartManager), "DelayedClear")]
 
-    [HarmonyPatch(typeof(StartManager), "Start")]
-    static class PreloadInit
+    static class PreloadInitLoad
     {
         [HarmonyPostfix]
-        static void Init()
+        static void Init() => PreloadInitClear.Init();
+    }
+    [HarmonyPatch(typeof(StartManager), "DelayedLoad")]
+    static class PreloadInitClear
+    {
+        [HarmonyPostfix]
+        internal static void Init()
         {
             Navigator.s_feed._core.Clear();
             Navigator.RunPreloads();
@@ -48,7 +54,7 @@ namespace XQuinn.CPPRuntime
                 string instruction = ChainInstruct(preload.Chain);
                 return new Preload(instruction, preload.Name);
             }
-            static string ChainInstruct(params string[] args)
+            internal static string ChainInstruct(params string[] args)
             {
                 StringBuilder sb = new();
                 sb.Append('~');
@@ -59,10 +65,7 @@ namespace XQuinn.CPPRuntime
 
         public static string ChainInstruct(params string[] args)
         {
-            StringBuilder sb = new();
-            sb.Append('~');
-            sb.AppendMany(args, ";");
-            return s_feed.SafeInterface(sb.ToString());
+            return s_feed.SafeInterface(Preload.ChainInstruct(args));
         }
 
         public static void Clear() => s_feed._core.Clear();
